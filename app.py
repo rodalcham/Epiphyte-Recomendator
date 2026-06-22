@@ -64,7 +64,7 @@ prec_seas = st.number_input(
 
 temp_mean = st.number_input(
     "Mean daily minimum temperature (°C)",
-    min_value=-30.0,
+    min_value=-20.0,
     max_value=35.0,
     value=20.0,
     step=0.1
