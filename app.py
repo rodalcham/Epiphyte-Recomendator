@@ -2,97 +2,121 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-# Load model
-model = joblib.load("epiphyte_suitability.pkl")
+# ------------------------------------------------------------
+# Load trained model
+# ------------------------------------------------------------
+# This file should be created from your notebook with:
+# joblib.dump(model, "epiphyte_suitability.pkl")
+MODEL_PATH = "epiphyte_suitability.pkl"
 
+model = joblib.load(MODEL_PATH)
+
+# ------------------------------------------------------------
+# Page settings
+# ------------------------------------------------------------
 st.set_page_config(
-    page_title="Epiphyte Compatibility Predictor",
+    page_title="Epiphyte Suitability Predictor",
     page_icon="🌿",
     layout="centered"
 )
 
-st.title("🌿 Epiphyte Compatibility Predictor")
+st.title("🌿 Epiphyte Suitability Predictor")
 
 st.write(
     """
-    Enter environmental conditions and estimate how suitable
-    they are for epiphytes.
+    This app estimates epiphyte compatibility from environmental conditions.
+
+    The score is a relative suitability percentile based on botanical regions
+    in the dataset.
     """
 )
 
-# Inputs
+# ------------------------------------------------------------
+# User inputs
+# ------------------------------------------------------------
+st.subheader("Environmental conditions")
 
-biome = st.selectbox(
-    "Biome",
-    [
-        "Temperate Broadleaf & Mixed Forests",
-        "Tropical & Subtropical Moist Broadleaf Forests",
-        "Deserts & Xeric Shrublands",
-        "Tropical & Subtropical Grasslands, Savannas & Shrublands",
-        "Temperate Grasslands, Savannas & Shrublands",
-        "Boreal Forests/Taiga",
-        "Mediterranean Forests, Woodlands & Scrub",
-        "Temperate Conifer Forests",
-        "Tundra",
-        "Montane Grasslands & Shrublands",
-        "Tropical & Subtropical Dry Broadleaf Forests",
-        "Tropical & Subtropical Coniferous Forests"
-    ]
+lat_absolute = st.slider(
+    "Absolute latitude (°)",
+    min_value=0.0,
+    max_value=90.0,
+    value=10.0,
+    step=0.1,
+    help="Distance from the equator. Example: Ecuador ≈ 0°, Heidelberg ≈ 49°."
 )
 
-temp_mean = st.slider(
-    "Mean Daily Minimum Temperature (°C)",
-    -20.0,
-    35.0,
-    20.0
+prec = st.number_input(
+    "Mean annual precipitation (mm)",
+    min_value=0.0,
+    max_value=12000.0,
+    value=2500.0,
+    step=50.0
 )
 
-prec = st.slider(
-    "Annual Precipitation (mm)",
-    0,
-    10000,
-    2500
+prec_seas = st.number_input(
+    "Precipitation seasonality",
+    min_value=0.0,
+    max_value=300.0,
+    value=50.0,
+    step=1.0,
+    help="Coefficient of variation in precipitation. Higher values mean rainfall is more seasonal."
 )
 
-prec_seas = st.slider(
-    "Precipitation Seasonality",
-    0,
-    300,
-    50
+temp_mean = st.number_input(
+    "Mean daily minimum temperature (°C)",
+    min_value=-30.0,
+    max_value=35.0,
+    value=20.0,
+    step=0.1
 )
 
-elev_range = st.slider(
-    "Elevation Range (m)",
-    0,
-    8000,
-    2000
+elev_range = st.number_input(
+    "Elevation range (m)",
+    min_value=0.0,
+    max_value=9000.0,
+    value=2000.0,
+    step=50.0
 )
 
+# ------------------------------------------------------------
 # Prediction
+# ------------------------------------------------------------
+sample = pd.DataFrame({
+    "lat_absolute": [lat_absolute],
+    "prec": [prec],
+    "PrecSeas": [prec_seas],
+    "temp_mean": [temp_mean],
+    "ElevRange": [elev_range]
+})
 
-if st.button("Predict Compatibility"):
-
-    sample = pd.DataFrame({
-        "biome": [biome],
-        "prec": [prec],
-        "PrecSeas": [prec_seas],
-        "temp_mean": [temp_mean],
-        "ElevRange": [elev_range]
-    })
-
+if st.button("Predict suitability"):
     prediction = model.predict(sample)[0]
 
-    prediction = max(0, min(1, prediction))
+    # Keep result inside 0-100%, because models sometimes get ambitious.
+    prediction = max(0.0, min(1.0, prediction))
+    percentage = prediction * 100
 
-    st.success(
-        f"Epiphyte Compatibility: {prediction * 100:.1f}%"
+    st.metric(
+        label="Epiphyte compatibility",
+        value=f"{percentage:.1f}%"
     )
 
-    if prediction > 0.8:
-        st.write("Excellent conditions for epiphytes.")
-    elif prediction > 0.6:
-        st.write("Good conditions for epiphytes.")
-    elif prediction > 0.4:
-        st.write("Moderate suitability.")
+    if percentage >= 80:
+        st.success("Very high suitability for epiphytes.")
+    elif percentage >= 60:
+        st.info("Good suitability for epiphytes.")
+    elif percentage >= 40:
+        st.warning("Moderate suitability for epiphytes.")
     else:
-        st.write("Low suitability for epiphytes.")
+        st.error("Low suitability for epiphytes.")
+
+    st.write("Input used by the model:")
+    st.dataframe(sample)
+
+# ------------------------------------------------------------
+# Notes
+# ------------------------------------------------------------
+st.caption(
+    "Model inputs: absolute latitude, precipitation, precipitation seasonality, "
+    "mean daily minimum temperature, and elevation range."
+)
