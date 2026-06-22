@@ -93,8 +93,8 @@ if st.button("Predict suitability"):
     prediction = model.predict(sample)[0]
 
     # Keep result inside 0-100%, because models sometimes get ambitious.
-    prediction = max(0.0, min(1.0, prediction))
-    percentage = prediction * 100
+    # prediction = max(0.0, min(1.0, prediction))
+    # percentage = prediction * 100
 
     st.metric(
         label="Epiphyte compatibility",
