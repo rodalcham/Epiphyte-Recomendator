@@ -98,17 +98,17 @@ if st.button("Predict suitability"):
 
     st.metric(
         label="Epiphyte compatibility",
-        value=f"{percentage:.1f}%"
+        value=f"{prediction:.1f}%"
     )
 
-    if percentage >= 80:
-        st.success("Very high suitability for epiphytes.")
-    elif percentage >= 60:
-        st.info("Good suitability for epiphytes.")
-    elif percentage >= 40:
-        st.warning("Moderate suitability for epiphytes.")
-    else:
-        st.error("Low suitability for epiphytes.")
+    # if percentage >= 80:
+    #     st.success("Very high suitability for epiphytes.")
+    # elif percentage >= 60:
+    #     st.info("Good suitability for epiphytes.")
+    # elif percentage >= 40:
+    #     st.warning("Moderate suitability for epiphytes.")
+    # else:
+    #     st.error("Low suitability for epiphytes.")
 
     st.write("Input used by the model:")
     st.dataframe(sample)
